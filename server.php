@@ -1,33 +1,64 @@
 <?php
-//  autenticacion por via http, muy insegura, nada recomendable
+
+// el servidor se levanta con este comando :php -S localhost:8000 router.php
+//para levantar el otro server el de autenticacion es igual pero puerto 8001:  php -S localhost:8001 auth_server.php
+//las peticiones se hacen atravez de curl
+
+//  autenticacion por via http, muy insegura, nada recomendable////////////
 // $user = array_key_exists( 'PHP_AUTH_USER', $_SERVER ) ? $_SERVER['PHP_AUTH_USER']: '';
 // $pwd = array_key_exists( 'PHP_AUTH_PW', $_SERVER ) ? $_SERVER['PHP_AUTH_PW']: '';
 // if ( $user !== 'eli1' || $pwd !== '1234'){
 // 	die;
 // }
 
-//autenticacio HMAC:
-if (
-	!array_key_exists('HTTP_X_HASH',$_SERVER)||
-	!array_key_exists('HTTP_X_TIMESTAMP',$_SERVER)||
-	!array_key_exists('HTTP_X_UID',$_SERVER)
-) {
-	die;
+//autenticacio HMAC://////////////////////////
+// if (
+// 	!array_key_exists('HTTP_X_HASH',$_SERVER)||
+// 	!array_key_exists('HTTP_X_TIMESTAMP',$_SERVER)||
+// 	!array_key_exists('HTTP_X_UID',$_SERVER)
+// ) {
+// 	die;
+// }
+
+// list( $hash, $uid, $timestamp ) = [
+// 	$_SERVER['HTTP_X_HASH'],
+// 	$_SERVER['HTTP_X_UID'],
+// 	$_SERVER['HTTP_X_TIMESTAMP'],
+// ];
+
+// $secret = 'esta es la clave secreta';
+
+// $newHash = sha1($uid.$timestamp.$secret);
+
+// if ( $newHash !== $hash ) {
+// 	die;
+// }
+
+// Autenticacion via access tokens, segura////////////////
+
+if( !array_key_exists( 'HTTP_X_TOKEN',$_SERVER)){
+    die;
 }
 
-list( $hash, $uid, $timestamp ) = [
-	$_SERVER['HTTP_X_HASH'],
-	$_SERVER['HTTP_X_UID'],
-	$_SERVER['HTTP_X_TIMESTAMP'],
-];
+$url = 'http://localhost:8001';
 
-$secret = 'esta es la clave secreta';
-
-$newHash = sha1($uid.$timestamp.$secret);
-
-if ( $newHash !== $hash ) {
-	die;
-}
+$ch = curl_init( $url );
+curl_setopt(
+    $ch,
+    CURLOPT_HTTPHEADER,
+    [
+        "X-Token: {$_SERVER['HTTP_X_TOKEN']}",
+    ]);
+    curl_setopt(
+        $ch,
+        CURLOPT_RETURNTRANSFER,
+        true
+    );
+    //llamamos
+    $ret = curl_exec($ch);
+    if($ret !== 'true'){
+        die;
+    }
 
 // Definimos los recursos disponibles
 $allowedResourceType = [
